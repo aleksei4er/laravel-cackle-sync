@@ -1,0 +1,51 @@
+{
+  "name": "aleksei4er/laravel-cackle-sync",
+  "description": "A laravel cackle sync",
+  "license": "MIT",
+  "keywords": [
+    "laravel",
+    "cackle",
+    "sync"
+  ],
+  "type": "library",
+  "authors": [
+    {
+      "name": "aleksei4er",
+      "email": "alexey.chyorny@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.2",
+    "illuminate/support": "^6.0|^7.0",
+    "guzzlehttp/guzzle": "^6.3"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^4.0|^5.0",
+    "phpunit/phpunit": "^8.4|^9.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Aleksei4er\\LaravelCackleSync\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Aleksei4er\\LaravelCackleSync\\Tests\\": "tests"
+    }
+  },
+  "scripts": {
+    "phpunit": "phpunit"
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Aleksei4er\\LaravelCackleSync\\ServiceProvider"
+      ]
+    }
+  },
+  "config": {
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "optimize-autoloader": true
+  }
+}
