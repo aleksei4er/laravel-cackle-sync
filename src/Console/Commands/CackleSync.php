@@ -17,9 +17,11 @@ class CackleSync extends Command
      */
     public function handle()
     {
+        $interval = config('laravel-cackle-sync.request_interval');
+
         LaravelCackleSync::loadChannels();
 
-        sleep(6);
+        sleep($interval);
 
         $channels = CackleChannel::get();
 
@@ -31,7 +33,7 @@ class CackleSync extends Command
                 $this->error($e->getMessage());
             }
 
-            sleep(6);
+            sleep($interval);
         }
     }
 }

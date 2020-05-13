@@ -167,7 +167,7 @@ class LaravelCackleSync
 
             $page++;
 
-            sleep(6);
+            sleep($this->config['request_interval']);
 
             $this->loadChannels($page);
         }
@@ -210,7 +210,7 @@ class LaravelCackleSync
 
             if ($count >= 100) {
 
-                sleep(6);
+                sleep($this->config['request_interval']);
 
                 $this->loadComments($com->id, $com->chan->id);
             }

@@ -10,6 +10,8 @@ return [
 
     'comment_list_url' => env('CACKLE_COMMENT_LIST_URL', 'http://cackle.me/api/3.0/comment/list.json'),
 
+    'request_interval' => env('CACKLE_REQUEST_INTERVAL', 10),
+
     'parameters' => [
 
         'id' => env('CACKLE_SITE_ID', ''),
