@@ -4,10 +4,12 @@ namespace Aleksei4er\LaravelCackleSync;
 
 use Aleksei4er\LaravelCackleSync\Models\CackleChannel;
 use Aleksei4er\LaravelCackleSync\Models\CackleComment;
+use Aleksei4er\LaravelCackleSync\Models\CackleReview;
 use GuzzleHttp\Client;
 
 class LaravelCackleSync
 {
+    const ITEMS_ON_PAGE = 100;
     /**
      * Config array
      *
@@ -26,15 +28,16 @@ class LaravelCackleSync
     }
 
     /**
-     * Get array of channels
+     * Get channels
      *
-     * @param integer $size
      * @param integer $page
      * @param string $modified
      * @return void
      */
-    public function getChannels(int $size, int $page, string $modified = '')
+    public function getChannels(int $page, string $modified = '')
     {
+        $size = static::ITEMS_ON_PAGE;
+
         $parameters = array_merge($this->config['parameters'], compact('size', 'page'));
 
         if ($modified) {
@@ -43,86 +46,82 @@ class LaravelCackleSync
 
         $url = $this->config['channel_list_url'] . "?" . http_build_query($parameters);
 
-        $client = new Client();
-
-        $result = $client->get($url, [
-            'headers' => [
-                "Content-Type" => "application/x-www-form-urlencoded; charset=utf-8",
-            ],
-            'http_errors' => false,
-            'verify' => false,
-        ]);
-
-        return json_decode($result->getBody()->getContents());
+        return $this->executeRequest($url);
     }
 
     /**
-     * Get all comments of channel
+     * Get comments of channel
      *
-     * @param string $chan
      * @param integer $page
      * @return object
      */
-    public function getComments(string $chan, int $page = 0): object
+    public function getComments(int $page = 0): object
     {
-        $parameters = array_merge($this->config['parameters'], compact('chan', 'page'));
+        $size = static::ITEMS_ON_PAGE;
+
+        $parameters = array_merge($this->config['parameters'], compact('size', 'page'));
 
         $url = $this->config['comment_list_url'] . "?" . http_build_query($parameters);
 
-        $client = new Client();
-
-        $result = $client->get($url, [
-            'headers' => [
-                "Content-Type" => "application/x-www-form-urlencoded; charset=utf-8",
-            ],
-            'http_errors' => false,
-            'verify' => false,
-        ]);
-
-        return json_decode($result->getBody()->getContents());
+        return $this->executeRequest($url);
     }
 
     /**
-     * Get comment of channel after comment id
+     * Get comments after comment id
      *
      * @param integer $commentId
-     * @param string $chan
      * @param integer $page
      * @return object
      */
-    public function getCommentsAfterId(string $chan, int $commentId, int $page = 0): object
+    public function getCommentsAfterId(int $commentId, int $page = 0): object
     {
-        $parameters = array_merge($this->config['parameters'], compact('chan', 'commentId', 'page'));
+        $size = static::ITEMS_ON_PAGE;
+
+        $parameters = array_merge($this->config['parameters'], compact('size', 'commentId', 'page'));
 
         $url = $this->config['comment_list_url'] . "?" . http_build_query($parameters);
 
-        $client = new Client();
-
-        $result = $client->get($url, [
-            'headers' => [
-                "Content-Type" => "application/x-www-form-urlencoded; charset=utf-8",
-            ],
-            'http_errors' => false,
-            'verify' => false,
-        ]);
-
-        return json_decode($result->getBody()->getContents());
+        return $this->executeRequest($url);
     }
 
     /**
-     * Get comment of channel after timestamp
+     * Get comments after timestamp
      *
      * @param integer $modified
-     * @param string $chan
      * @param integer $page
      * @return object
      */
-    public function getCommentsAfterTimestamp(int $modified, string $chan, int $page = 0): object
+    public function getCommentsAfterTimestamp(int $modified, int $page = 0): object
     {
-        $parameters = array_merge($this->config['parameters'], compact('chan', 'modified', 'page'));
+        $size = static::ITEMS_ON_PAGE;
+
+        $parameters = array_merge($this->config['parameters'], compact('size', 'modified', 'page'));
 
         $url = $this->config['comment_list_url'] . "?" . http_build_query($parameters);
 
+        return $this->executeRequest($url);
+    }
+
+    /**
+     * Get reviews after timestamp
+     *
+     * @param integer $modified
+     * @param integer $page
+     * @return object
+     */
+    public function getReviewsAfterTimestamp(int $modified = 0, int $page = 0): object
+    {
+        $size = static::ITEMS_ON_PAGE;
+
+        $parameters = array_merge($this->config['parameters'], compact('size', 'modified', 'page'));
+
+        $url = $this->config['review_list_url'] . "?" . http_build_query($parameters);
+
+        return $this->executeRequest($url);
+    }
+
+    private function executeRequest($url)
+    {
         $client = new Client();
 
         $result = $client->get($url, [
@@ -137,83 +136,69 @@ class LaravelCackleSync
     }
 
     /**
-     * Sync channels
+     * Save array of channels
      *
-     * @param integer $page
+     * @param array $channels
      * @return void
      */
-    public function loadChannels(int $page = 0): void
+    public function saveChannels(array $channels): void
     {
-        $chans = $this->getChannels(100, $page);
+        foreach ($channels as $c) {
 
-        if (!isset($chans->chans)) return;
-
-        $count1 = count($chans->chans);
-
-        foreach ($chans->chans as $chan) {
-
-            $channel = CackleChannel::firstOrNew(['id' => $chan->id]);
-            $channel->channel = $chan->channel;
-            $channel->url = $chan->url;
-            $channel->title = $chan->title;
-            $channel->created = $chan->created;
-
-            if (isset($chan->modify)) $channel->modified = $chan->modify;
-
+            $channel = CackleChannel::firstOrNew(['id' => $c->id]);
+            $channel->channel = $c->channel;
+            $channel->url = $c->url;
+            $channel->title = $c->title;
+            $channel->created = $c->created;
+            $channel->modified = $c->modify ?? null;
             $channel->save();
-        }
-
-        if ($count1 >= 100) {
-
-            $page++;
-
-            sleep($this->config['request_interval']);
-
-            $this->loadChannels($page);
         }
     }
 
     /**
-     * Sync comments
+     * Save array of comments
      *
-     * @param integer $lastCommentId
-     * @param string $channel
+     * @param array $comments
      * @return void
      */
-    public function loadComments(string $channel, int $lastCommentId = 0): void
+    public function saveComments(array $comments): void
     {
-        $comments = $this->getCommentsAfterId($channel, $lastCommentId);
-
-        $count = count($comments->comments);
-
-        foreach ($comments->comments as $com) {
-            $author = 'Аноним';
-
-            if (isset($com->anonym) && isset($com->anonym->name)) {
-                $author = $com->anonym->name;
-            }
-
-            if (isset($com->author) && isset($com->author->name)) {
-                $author = $com->author->name;
-            }
-
-            $comment = CackleComment::firstOrNew(['id' => $com->id]);
-            $comment->channel_id = $com->chan->id;
-            $comment->comment = $com->message;
-            $comment->created = $com->created;
-            $comment->modified = $com->modified;
-            $comment->name = $author;
-            $comment->email = $author;
-            $comment->ip = $com->ip;
-            $comment->status = $com->status;
+        foreach ($comments as $c) {
+            $comment = CackleComment::firstOrNew(['id' => $c->id]);
+            $comment->channel_id = $c->chan->id;
+            $comment->comment = $c->message;
+            $comment->created = $c->created;
+            $comment->modified = $c->modified;
+            $comment->name = $c->author->name ?? 'Аноним';
+            $comment->email = $c->author->email ?? '';
+            $comment->ip = $c->ip;
+            $comment->status = $c->status;
             $comment->save();
+        }
+    }
 
-            if ($count >= 100) {
-
-                sleep($this->config['request_interval']);
-
-                $this->loadComments($com->id, $com->chan->id);
-            }
+    /**
+     * Save array of reviews
+     *
+     * @return void
+     */
+    public function saveReviews(array $reviews): void
+    {
+        foreach ($reviews as $r) {
+            $review = CackleReview::firstOrNew(['id' => $r->id]);
+            $review->channel_id = $r->chan->id;
+            $review->star = $r->star;
+            $review->pros = $r->pros;
+            $review->cons = $r->cons;
+            $review->comment = $r->comment;
+            $review->ip = $r->ip;
+            $review->media = $r->media;
+            $review->name = $r->author->name ?? 'Аноним';
+            $review->email = $r->author->email ?? '';
+            $review->status = $r->status;
+            $review->created = $r->created;
+            $review->modified = $r->modified;
+            $review->save();
         }
     }
 }

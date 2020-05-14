@@ -2,8 +2,11 @@
 
 namespace Aleksei4er\LaravelCackleSync\Console\Commands;
 
-use Aleksei4er\LaravelCackleSync\Facades\LaravelCackleSync;
-use Aleksei4er\LaravelCackleSync\Models\CackleChannel;
+use Aleksei4er\LaravelCackleSync\Jobs\LoadChannels;
+use Aleksei4er\LaravelCackleSync\Jobs\LoadComments;
+use Aleksei4er\LaravelCackleSync\Jobs\LoadReviews;
+use Aleksei4er\LaravelCackleSync\Models\CackleComment;
+use Aleksei4er\LaravelCackleSync\Models\CackleReview;
 use Illuminate\Console\Command;
 
 class CackleSync extends Command
@@ -17,23 +20,12 @@ class CackleSync extends Command
      */
     public function handle()
     {
-        $interval = config('laravel-cackle-sync.request_interval');
+        // LoadChannels::dispatch()->onQueue("cackle");
 
-        LaravelCackleSync::loadChannels();
+        // $lastCommentId = CackleComment::max('id') ?? 0;
+        // LoadComments::dispatch($lastCommentId)->onQueue("cackle");
 
-        sleep($interval);
-
-        $channels = CackleChannel::get();
-
-        foreach ($channels as $channel) {
-
-            try {
-                LaravelCackleSync::loadComments($channel->channel);
-            } catch (\Exception $e) {
-                $this->error($e->getMessage());
-            }
-
-            sleep($interval);
-        }
+        $modified = CackleReview::max('modified') ?? 0;
+        LoadReviews::dispatch($modified)->onQueue("cackle");
     }
 }
