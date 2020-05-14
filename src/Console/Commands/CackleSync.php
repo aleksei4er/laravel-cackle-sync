@@ -20,10 +20,10 @@ class CackleSync extends Command
      */
     public function handle()
     {
-        // LoadChannels::dispatch()->onQueue("cackle");
+        LoadChannels::dispatch()->onQueue("cackle");
 
-        // $lastCommentId = CackleComment::max('id') ?? 0;
-        // LoadComments::dispatch($lastCommentId)->onQueue("cackle");
+        $lastCommentId = CackleComment::max('id') ?? 0;
+        LoadComments::dispatch($lastCommentId)->onQueue("cackle");
 
         $modified = CackleReview::max('modified') ?? 0;
         LoadReviews::dispatch($modified)->onQueue("cackle");
