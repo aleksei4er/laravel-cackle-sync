@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CackleComment extends Model
 {
+    protected $guarded = ['id'];
+    
     /**
      * Channel relation
      *
